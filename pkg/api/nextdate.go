@@ -2,14 +2,14 @@ package api
 
 import (
 	"fmt"
-	"strings"
-	"strconv"
-	"time"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func afterNow(date, now time.Time) bool {
-  return date.After(now)
+	return date.After(now)
 }
 
 func parseDate(date string) (time.Time, error) {
@@ -17,35 +17,34 @@ func parseDate(date string) (time.Time, error) {
 }
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
-
 	if repeat == "" {
-		return "", fmt.Errorf("пусто")
+		return "", fmt.Errorf("не указано правило повторения")
 	}
 
 	date, err := parseDate(dstart)
-	  if err != nil {
-		return "", err
-	  }
+	if err != nil {
+		return "", fmt.Errorf("неверный формат даты: %w", err)
+	}
 
 	parse := strings.Fields(repeat)
 
 	if len(parse) == 0 {
-		return "", fmt.Errorf("ошибка")
+		return "", fmt.Errorf("неверный формат правила повторения")
 	}
 
 	switch parse[0] {
 	case "d":
 		if len(parse) != 2 {
-			return "", fmt.Errorf("ошибка")
+			return "", fmt.Errorf("правило 'd' должно иметь вид: d <число>")
 		}
 
 		interval, err := strconv.Atoi(parse[1])
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("интервал должен быть целым числом")
 		}
 
 		if interval < 1 || interval > 400 {
-			return "", fmt.Errorf("ошибка")
+			return "", fmt.Errorf("интервал должен быть в диапазоне от 1 до 400")
 		}
 
 		for {
@@ -57,8 +56,8 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		}
 
 	case "y":
-		if len(parse) != 1{
-			return "", fmt.Errorf("ошибка")
+		if len(parse) != 1 {
+			return "", fmt.Errorf("правило 'y' не принимает параметров")
 		}
 
 		for {
@@ -68,16 +67,15 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				break
 			}
 		}
+
 	default:
-		return "", fmt.Errorf("ошибка")
-		
+		return "", fmt.Errorf("неизвестное правило повторения")
 	}
 
-		return date.Format("20060102"), nil
-
+	return date.Format("20060102"), nil
 }
 
-func nextDayHandler( res http.ResponseWriter, req *http.Request) {
+func nextDayHandler(res http.ResponseWriter, req *http.Request) {
 	nowStr := req.FormValue("now")
 	date := req.FormValue("date")
 	repeat := req.FormValue("repeat")
@@ -87,22 +85,20 @@ func nextDayHandler( res http.ResponseWriter, req *http.Request) {
 	if nowStr == "" {
 		now = time.Now()
 	} else {
-
 		var err error
 
 		now, err = time.Parse("20060102", nowStr)
 		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
+			http.Error(res, "неверный формат даты now, ожидается YYYYMMDD", http.StatusBadRequest)
 			return
 		}
 	}
 
-	next, err := NextDate( now, date, repeat)
+	next, err := NextDate(now, date, repeat)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	res.Write([]byte(next))
-
 }

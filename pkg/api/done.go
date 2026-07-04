@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -12,16 +13,18 @@ func taskDoneHandler(w http.ResponseWriter, r *http.Request) {
 
 	if id == "" {
 		writeJSON(w, map[string]string{
-			"error": "ошибка",
-		})
+			"error": "не указан id",
+		}, http.StatusBadRequest)
 		return
 	}
 
 	task, err := db.GetTask(id)
 	if err != nil {
+		log.Println(err)
+
 		writeJSON(w, map[string]string{
 			"error": err.Error(),
-		})
+		}, http.StatusNotFound)
 		return
 	}
 
@@ -34,9 +37,11 @@ func taskDoneHandler(w http.ResponseWriter, r *http.Request) {
 			task.Repeat,
 		)
 		if err != nil {
+			log.Println(err)
+
 			writeJSON(w, map[string]string{
 				"error": err.Error(),
-			})
+			}, http.StatusBadRequest)
 			return
 		}
 
@@ -44,11 +49,13 @@ func taskDoneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
+		log.Println(err)
+
 		writeJSON(w, map[string]string{
 			"error": err.Error(),
-		})
+		}, http.StatusInternalServerError)
 		return
 	}
 
-	writeJSON(w, map[string]string{})
+	writeJSON(w, map[string]string{}, http.StatusOK)
 }

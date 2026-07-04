@@ -1,6 +1,6 @@
 package db
 
-import ("fmt")
+import "fmt"
 
 type Task struct {
 	ID      string `json:"id"`
@@ -37,14 +37,12 @@ func AddTask(task *Task) (int64, error) {
 }
 
 func Tasks(limit int) ([]*Task, error) {
-
 	rows, err := db.Query(`
 		SELECT id, date, title, comment, repeat
 		FROM scheduler
 		ORDER BY date
 		LIMIT ?
 	`, limit)
-
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +60,16 @@ func Tasks(limit int) ([]*Task, error) {
 			&t.Comment,
 			&t.Repeat,
 		)
-
 		if err != nil {
 			return nil, err
 		}
 
 		tasks = append(tasks, &t)
+	}
+
+	// Исправление по замечанию ревью
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	if tasks == nil {
@@ -82,7 +84,7 @@ func GetTask(id string) (*Task, error) {
 		SELECT id, date, title, comment, repeat
 		FROM scheduler
 		WHERE id = ?
-		`, id)
+	`, id)
 
 	var t Task
 
@@ -93,7 +95,6 @@ func GetTask(id string) (*Task, error) {
 		&t.Comment,
 		&t.Repeat,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -102,53 +103,46 @@ func GetTask(id string) (*Task, error) {
 }
 
 func DeleteTask(id string) error {
-    res, err := db.Exec(
-        `
-        DELETE FROM scheduler
-        WHERE id = ?
-        `,
-        id,
-    )
-    if err != nil {
-        return err
-    }
+	res, err := db.Exec(`
+		DELETE FROM scheduler
+		WHERE id = ?
+	`, id)
+	if err != nil {
+		return err
+	}
 
-    count, err := res.RowsAffected()
-    if err != nil {
-        return err
-    }
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
 
-    if count == 0 {
-        return fmt.Errorf("ошибка")
-    }
+	if count == 0 {
+		return fmt.Errorf("задача не найдена")
+	}
 
-    return nil
+	return nil
 }
 
 func UpdateDate(next string, id string) error {
-    res, err := db.Exec(
-        `
-        UPDATE scheduler
-        SET date = ?
-        WHERE id = ?
-        `,
-        next,
-        id,
-    )
-    if err != nil {
-        return err
-    }
+	res, err := db.Exec(`
+		UPDATE scheduler
+		SET date = ?
+		WHERE id = ?
+	`, next, id)
+	if err != nil {
+		return err
+	}
 
-    count, err := res.RowsAffected()
-    if err != nil {
-        return err
-    }
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
 
-    if count == 0 {
-        return fmt.Errorf("ошибка")
-    }
+	if count == 0 {
+		return fmt.Errorf("задача не найдена")
+	}
 
-    return nil
+	return nil
 }
 
 func UpdateTask(task *Task) error {
@@ -163,7 +157,6 @@ func UpdateTask(task *Task) error {
 		task.Repeat,
 		task.ID,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -174,7 +167,7 @@ func UpdateTask(task *Task) error {
 	}
 
 	if n == 0 {
-		return fmt.Errorf("ошибка")
+		return fmt.Errorf("задача не найдена")
 	}
 
 	return nil

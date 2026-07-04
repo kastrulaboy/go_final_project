@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"log"
 
 	"main/pkg/db"
 )
@@ -48,36 +49,39 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
+		log.Println(err)
 		writeJSON(w, map[string]string{
 			"error": err.Error(),
-		})
+		}, http.StatusBadRequest)
 		return
 	}
 
 	if task.Title == "" {
 		writeJSON(w, map[string]string{
-			"error": "ошибка",
-		})
+			"error": "не указан заголовок",
+		}, http.StatusBadRequest)
 		return
 	}
 
 	err = checkDate(&task)
 	if err != nil {
+		log.Println(err)
 		writeJSON(w, map[string]string{
 			"error": err.Error(),
-		})
+		}, http.StatusBadRequest)
 		return
 	}
 
 	id, err := db.AddTask(&task)
 	if err != nil {
+		log.Println(err)
 		writeJSON(w, map[string]string{
 			"error": err.Error(),
-		})
+		}, http.StatusInternalServerError)
 		return
 	}
 
 	writeJSON(w, map[string]string{
 		"id": strconv.FormatInt(id, 10),
-	})
+	}, http.StatusOK)
 }
